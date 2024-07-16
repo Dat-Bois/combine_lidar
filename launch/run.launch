@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="combine_lidar" type="lidar_node" name="combine_lidar_node">
+    </node>
+</launch>
