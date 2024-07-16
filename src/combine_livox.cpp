@@ -48,7 +48,7 @@ std::mutex right_cloud_mutex;
 void SigHandle(int sig) 
 {
   if (sig == SIGINT) {} // to ignore warning
-  RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Shutting down combine_livox node...");
+  RCLCPP_INFO(rclcpp::get_logger("combine_livox"), "Shutting down combine_livox node...");
   rclcpp::shutdown();
 }
 
@@ -218,8 +218,9 @@ int main(int argc, char * argv[])
   auto node = std::make_shared<CombineLivox>();
   std::signal(SIGINT, SigHandle);
   executor.add_node(node);
-  RCLCPP_WARN(node->get_logger(),"Starting the combine_livox node...");
+  RCLCPP_INFO(node->get_logger(),"Starting the combine_livox node...");
   executor.spin();
+  RCLCPP_INFO(node->get_logger(), "Shutting down combine_livox node...");
   rclcpp::shutdown();
   return 0;
 }
