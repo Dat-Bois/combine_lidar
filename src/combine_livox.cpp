@@ -12,7 +12,7 @@
 #include <condition_variable>
 
 #include <cmath>
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 #include <iostream>
 
 #include "rclcpp/rclcpp.hpp"
@@ -45,6 +45,13 @@ MatrixXd right_xyz;
 std::mutex left_cloud_mutex;
 std::mutex right_cloud_mutex;
 
+void SigHandle(int sig) 
+{
+  if (sig == SIGINT) {} // to ignore warning
+  RCLCPP_WARN(rclcpp::get_logger("rclcpp"), "Shutting down combine_livox node...");
+  rclcpp::shutdown();
+}
+
 Matrix3d rotationMatrix(double degrees) {
     double radians = degrees * M_PI / 180.0;
     Matrix3d R;
@@ -61,7 +68,7 @@ MatrixXd rotatePointCloud(const MatrixXd &xyz, double degrees, double x0, double
     return rotated.rowwise() + Eigen::RowVector3d(x0, y0, z0);
 }
 
-MatrixXd create_cloud(const PointCloud2Ptr &msg) {
+MatrixXd create_cloud(const PointCloud2Ptr msg) {
   const size_t number_of_points = msg->height * msg->width;
   MatrixXd xyz(number_of_points, 3);
 
@@ -77,7 +84,7 @@ MatrixXd create_cloud(const PointCloud2Ptr &msg) {
   return xyz;
 }
 
-void update_cloud(const PointCloud2Ptr &msg, const MatrixXd &xyz) {
+void update_cloud(const PointCloud2Ptr msg, const MatrixXd &xyz) {
   const size_t number_of_points = msg->height * msg->width;
   sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
   sensor_msgs::PointCloud2Iterator<float> iter_y(*msg, "y");
@@ -89,7 +96,7 @@ void update_cloud(const PointCloud2Ptr &msg, const MatrixXd &xyz) {
     }
 }
 
-void right_PointCloud2Callback(const PointCloud2Ptr &msg)
+void right_PointCloud2Callback(const PointCloud2Ptr msg)
 {
   MatrixXd xyz = create_cloud(msg);
   MatrixXd rotated_xyz = rotatePointCloud(xyz, angle_c, x_distance_to_center, y_distance_to_center, 0.0);
@@ -101,7 +108,7 @@ void right_PointCloud2Callback(const PointCloud2Ptr &msg)
   right_cloud_mutex.unlock();
 }
 
-void left_PointCloud2Callback(const PointCloud2Ptr &msg)
+void left_PointCloud2Callback(const PointCloud2Ptr msg)
 {
   MatrixXd xyz = create_cloud(msg);
   MatrixXd rotated_xyz = rotatePointCloud(xyz, -angle_c, -x_distance_to_center, y_distance_to_center, 0.0);
@@ -134,6 +141,10 @@ PointCloud2Ptr combine_lidar() {
   MatrixXd combined_xyz(left_xyz.rows() + right_xyz.rows(), 3);
   combined_xyz << left_xyz, right_xyz;
 
+  // Release the locks
+  left_cloud_mutex.unlock();
+  right_cloud_mutex.unlock();
+
   // Update the combined cloud
   update_cloud(combined_cloud, combined_xyz);
 
@@ -150,52 +161,65 @@ std::string string_thread_id()
   return std::to_string(hashed);
 }
 
-// class CombineLivox : public rclcpp::Node
-// {
-//   public:
-//     CombineLivox()
-//     : Node("combine_livox")
-//     {
-//       // Setup the callback groups
-//       left_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
-//       right_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+class CombineLivox : public rclcpp::Node
+{
+  public:
+    CombineLivox()
+    : Node("combine_livox")
+    {
+      // Setup the callback groups
+      left_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+      right_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
-//       // Setup the subscription options
-//       auto leftopts = rclcpp::SubscriptionOptions();
-//       leftopts.callback_group = left_group;
-//       auto rightopts = rclcpp::SubscriptionOptions();
-//       rightopts.callback_group = right_group;
+      // Setup the subscription options
+      auto leftopts = rclcpp::SubscriptionOptions();
+      leftopts.callback_group = left_group;
+      auto rightopts = rclcpp::SubscriptionOptions();
+      rightopts.callback_group = right_group;
 
-//       // Setup the subscription and publisher
-//       left_cloud_sub = this->create_subscription<PointCloud2>(left_cloud_topic, 10, left_PointCloud2Callback, leftopts);
-//       right_cloud_sub_ = this->create_subscription<PointCloud2>(right_cloud_topic, 10, right_PointCloud2Callback, rightopts);
-//       combined_cloud_pub_ = this->create_publisher<PointCloud2>(combined_cloud_topic, 10);
+      // Setup the subscription and publisher
+      left_cloud_sub = this->create_subscription<PointCloud2>(left_cloud_topic, 10, left_PointCloud2Callback, leftopts);
+      right_cloud_sub_ = this->create_subscription<PointCloud2>(right_cloud_topic, 10, right_PointCloud2Callback, rightopts);
+      combined_cloud_pub_ = this->create_publisher<PointCloud2>(combined_cloud_topic, 10);
+      comb_lidar_status_pub_ = this->create_publisher<std_msgs::msg::String>("comb_lidar_status", 10);
 
-//       // Setup the timer
-//       auto timer_callback = [this]() -> void {
-//         PointCloud2Ptr combined_cloud = combine_lidar();
-//         if (combined_cloud != nullptr) {
-//           this->combined_cloud_pub_->publish(*combined_cloud);
-//         }
-//       };
-//       auto timer = this->create_wall_timer(50ms, timer_callback);
-//     }
+      // Setup the timer
+      timer_ = this->create_wall_timer(50ms, std::bind(&CombineLivox::timer_callback, this));
+    }
 
-//   private:
-//     rclcpp::CallbackGroup::SharedPtr left_group;
-//     rclcpp::CallbackGroup::SharedPtr right_group;
-//     rclcpp::Subscription<PointCloud2>::SharedPtr left_cloud_sub;
-//     rclcpp::Subscription<PointCloud2>::SharedPtr right_cloud_sub_;
-//     rclcpp::Publisher<PointCloud2>::SharedPtr combined_cloud_pub_;
-// };
+  private:
+    
+    void timer_callback() {
+      std_msgs::msg::String msg;
+      PointCloud2Ptr combined_cloud = combine_lidar();
+      if (combined_cloud != nullptr) {
+        this->combined_cloud_pub_->publish(*combined_cloud);
+        msg.data = "Combined cloud published";
+      }
+      else {
+        msg.data = "Combined cloud not published";
+      }
+      this->comb_lidar_status_pub_->publish(msg);
+    }
+
+    rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::CallbackGroup::SharedPtr left_group;
+    rclcpp::CallbackGroup::SharedPtr right_group;
+    rclcpp::Subscription<PointCloud2>::SharedPtr left_cloud_sub;
+    rclcpp::Subscription<PointCloud2>::SharedPtr right_cloud_sub_;
+    rclcpp::Publisher<PointCloud2>::SharedPtr combined_cloud_pub_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr comb_lidar_status_pub_;
+};
 
 int main(int argc, char * argv[])
 {
   rclcpp::init(argc, argv);
-  // rclcpp::executors::MultiThreadedExecutor executor;
-  // auto node = std::make_shared<CombineLivox>();
-  // executor.add_node(node);
-  // executor.spin();
-  // rclcpp::shutdown();
+  rclcpp::executors::MultiThreadedExecutor executor;
+  auto node = std::make_shared<CombineLivox>();
+  std::signal(SIGINT, SigHandle);
+  executor.add_node(node);
+  RCLCPP_WARN(node->get_logger(),"Starting the combine_livox node...");
+  executor.spin();
+  rclcpp::shutdown();
   return 0;
 }
