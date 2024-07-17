@@ -3,13 +3,10 @@
 #include <memory>
 #include <string>
 
-#include <deque>
 #include <mutex>
 #include <thread>
-#include <typeinfo>
 
 #include <csignal>
-#include <condition_variable>
 
 #include <cmath>
 #include <eigen3/Eigen/Dense>
@@ -17,7 +14,6 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
-#include "sensor_msgs/msg/point_field.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/point_cloud2_iterator.hpp"
 

@@ -27,27 +27,19 @@ find_package(rclcpp REQUIRED)
 # Find dependencies for ROS messages format
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
-find_package(nav_msgs REQUIRED)
 
 # external from ROS
 find_package(Eigen3 REQUIRED)
-find_package(PCL REQUIRED)
-find_package(pcl_conversions REQUIRED)
 
 include_directories(
         include
         ${EIGEN3_INCLUDE_DIR}
-        ${PCL_INCLUDE_DIRS}
-        ${pcl_conversions_INCLUDE_DIRS}
 )
 
 # Add executable the generate | name must be the same as the launch file
 add_executable(combine_lidar_node src/combine_livox.cpp)
 # Link dependencies to the executable | name must be the same as the launch file
-ament_target_dependencies(combine_lidar_node rclcpp std_msgs sensor_msgs nav_msgs)
-
-
-target_link_libraries(combine_lidar_node ${PCL_LIBRARIES})
+ament_target_dependencies(combine_lidar_node rclcpp std_msgs sensor_msgs)
 
 # install the executable
 install(TARGETS
