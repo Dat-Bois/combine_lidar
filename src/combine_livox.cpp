@@ -28,12 +28,12 @@ typedef Eigen::Matrix3d Matrix3d;
 
 using namespace std;
 
-string left_cloud_topic = "/livox/lidar_3";
-string right_cloud_topic = "/livox/lidar_";
-string combined_cloud_topic = "/combined/livox/lidar";
+string left_cloud_topic = "/livox/lidar";
+string right_cloud_topic = "/livox/lidar";
+string combined_cloud_topic = "/livox/combined_lidar";
 
-double x_distance_to_center = 0.0; // meters
-double y_distance_to_center = 0.0; // meters
+double x_distance_to_center = 2.0; // meters
+double y_distance_to_center = 0.0; // meters 
 double angle_c = 20.0; // degrees, clockwise rotation
 
 PointCloud2Ptr left_cloud;
@@ -53,7 +53,7 @@ void SigHandle(int sig)
 }
 
 Matrix3d rotationMatrix(double degrees) {
-    double radians = degrees * M_PI / 180.0;
+    double radians = degrees * (M_PI / 180.0);
     Matrix3d R;
     R << std::cos(radians), -std::sin(radians), 0,
          std::sin(radians), std::cos(radians), 0,
@@ -62,10 +62,11 @@ Matrix3d rotationMatrix(double degrees) {
 }
 
 MatrixXd rotatePointCloud(const MatrixXd &xyz, double degrees, double x0, double y0, double z0) {
-    // Rotate the points
-    MatrixXd rotated = xyz * rotationMatrix(degrees);
-    // Translate the points 
-    return rotated.rowwise() + Eigen::RowVector3d(x0, y0, z0);
+    // First translate and then rotate the points
+    MatrixXd translated = xyz.rowwise() - Eigen::RowVector3d(y0, x0, z0);
+    // // Rotate the points
+    MatrixXd rotated = translated * rotationMatrix(degrees);
+    return rotated;
 }
 
 MatrixXd create_cloud(const PointCloud2Ptr msg) {
@@ -105,7 +106,6 @@ void right_PointCloud2Callback(const PointCloud2Ptr msg)
   std::lock_guard<std::mutex> lock(right_cloud_mutex);
   right_cloud = msg;
   right_xyz = rotated_xyz;
-  right_cloud_mutex.unlock();
 }
 
 void left_PointCloud2Callback(const PointCloud2Ptr msg)
@@ -117,7 +117,6 @@ void left_PointCloud2Callback(const PointCloud2Ptr msg)
   std::lock_guard<std::mutex> lock(left_cloud_mutex);
   left_cloud = msg;
   left_xyz = rotated_xyz;
-  left_cloud_mutex.unlock();
 }
 
 PointCloud2Ptr combine_lidar() {
@@ -132,18 +131,15 @@ PointCloud2Ptr combine_lidar() {
   }
 
   // Combine the clouds
-  PointCloud2Ptr combined_cloud = left_cloud;
+  PointCloud2Ptr combined_cloud = std::make_shared<PointCloud2>(*left_cloud);
   combined_cloud->header.stamp = rclcpp::Clock().now();
   combined_cloud->width = left_cloud->width + right_cloud->width;
   combined_cloud->height = 1;
+  combined_cloud->data.resize(combined_cloud->width * combined_cloud->height * combined_cloud->point_step);
 
   // Combine the xyz matrices
   MatrixXd combined_xyz(left_xyz.rows() + right_xyz.rows(), 3);
   combined_xyz << left_xyz, right_xyz;
-
-  // Release the locks
-  left_cloud_mutex.unlock();
-  right_cloud_mutex.unlock();
 
   // Update the combined cloud
   update_cloud(combined_cloud, combined_xyz);
@@ -184,7 +180,7 @@ class CombineLivox : public rclcpp::Node
       comb_lidar_status_pub_ = this->create_publisher<std_msgs::msg::String>("comb_lidar_status", 10);
 
       // Setup the timer
-      timer_ = this->create_wall_timer(50ms, std::bind(&CombineLivox::timer_callback, this));
+      timer_ = this->create_wall_timer(30ms, std::bind(&CombineLivox::timer_callback, this));
     }
 
   private:
@@ -195,6 +191,7 @@ class CombineLivox : public rclcpp::Node
       if (combined_cloud != nullptr) {
         this->combined_cloud_pub_->publish(*combined_cloud);
         msg.data = "Combined cloud published";
+        // this->comb_lidar_status_pub_->publish(msg);
       }
       else {
         msg.data = "Combined cloud not published";
