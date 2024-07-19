@@ -95,7 +95,7 @@ CombineLivox::CombineLivox()
   auto rightopts = rclcpp::SubscriptionOptions();
   rightopts.callback_group = right_group;
 
-  left_cloud_sub = this->create_subscription<PointCloud2>(left_cloud_topic, 10, left_PointCloud2Callback, leftopts);
+  left_cloud_sub_ = this->create_subscription<PointCloud2>(left_cloud_topic, 10, left_PointCloud2Callback, leftopts);
   right_cloud_sub_ = this->create_subscription<PointCloud2>(right_cloud_topic, 10, right_PointCloud2Callback, rightopts);
   combined_cloud_pub_ = this->create_publisher<PointCloud2>(combined_cloud_topic, 10);
   comb_lidar_status_pub_ = this->create_publisher<std_msgs::msg::String>("comb_lidar_status", 10);

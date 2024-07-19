@@ -20,7 +20,7 @@ private:
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::CallbackGroup::SharedPtr left_group;
     rclcpp::CallbackGroup::SharedPtr right_group;
-    rclcpp::Subscription<PointCloud2>::SharedPtr left_cloud_sub;
+    rclcpp::Subscription<PointCloud2>::SharedPtr left_cloud_sub_;
     rclcpp::Subscription<PointCloud2>::SharedPtr right_cloud_sub_;
     rclcpp::Publisher<PointCloud2>::SharedPtr combined_cloud_pub_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr comb_lidar_status_pub_;
