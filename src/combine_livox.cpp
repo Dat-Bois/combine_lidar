@@ -23,13 +23,13 @@ extern MatrixXd right_xyz;
 std::mutex left_cloud_mutex;
 std::mutex right_cloud_mutex;
 
-std::string left_cloud_topic = "/livox/lidar";
-std::string right_cloud_topic = "/livox/lidar";
+std::string left_cloud_topic = "/livox/lidar_3WEDH7600103311";
+std::string right_cloud_topic = "/livox/lidar_3WEDH7600104801"; // /livox/lidar_3WEDH7600104801
 std::string combined_cloud_topic = "/livox/combined_lidar";
 
-double x_distance_to_center = 2.0; // meters
-double y_distance_to_center = 0.0; // meters 
-double angle_c = 20.0; // degrees, clockwise rotation
+double x_distance_to_center = 0.2; // meters
+double y_distance_to_center = 0; // meters 
+double angle_c = 30; // degrees, clockwise rotation
 
 PointCloud2Ptr left_cloud;
 PointCloud2Ptr right_cloud;
