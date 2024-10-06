@@ -1,5 +1,5 @@
-#include "combine_lidar/math_utils.hpp"
 #include <cmath>
+#include "combine_lidar/math_utils.hpp"
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 Matrix3d rotationMatrix(double degrees) {

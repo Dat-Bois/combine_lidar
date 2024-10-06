@@ -30,7 +30,11 @@ class Grid
         
         class Iterator {
             public:
-                Iterator(phmap::flat_hash_map<pair<int, int>, uint8_t>::iterator iter) : map_iter(iter) {}
+                using map_iterator = phmap::flat_hash_map<std::pair<int, int>, uint8_t>::iterator;
+                Iterator(map_iterator iter) : map_iter(iter) {}
+                bool operator==(const Iterator &other) const {
+                    return map_iter == other.map_iter;
+                }
                 bool operator!=(const Iterator &other) const {
                     return map_iter != other.map_iter;
                 }
@@ -38,11 +42,14 @@ class Grid
                     ++map_iter;
                     return *this;
                 }
-                const pair<pair<int, int>, uint8_t> &operator*() const {
+                const pair<pair<int, int>, uint8_t> operator*() const {
                     return *map_iter;
                 }
+                std::pair<const std::pair<int, int>, uint8_t>* operator->() const {
+                    return &(*map_iter);
+                }
             private:
-                phmap::flat_hash_map<pair<int, int>, uint8_t>::iterator map_iter;
+                map_iterator map_iter;
         };
         Iterator begin() {return Iterator(grid.begin());}
         Iterator end() {return Iterator(grid.end());}

@@ -36,8 +36,10 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
 )
 
+file(GLOB_RECURSE SOURCES "src/*.cpp")
+
 # Add executable the generate | name must be the same as the launch file
-add_executable(combine_lidar_node src/combine_livox.cpp src/math_utils.cpp)
+add_executable(combine_lidar_node ${SOURCES})
 # Link dependencies to the executable | name must be the same as the launch file
 ament_target_dependencies(combine_lidar_node rclcpp std_msgs sensor_msgs)
 

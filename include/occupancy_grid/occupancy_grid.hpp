@@ -33,6 +33,8 @@ When the robot moves, the local grid is overlayed onto the global grid at the ro
 */
 
 typedef Eigen::MatrixXd MatrixXd;
+typedef Eigen::Matrix2d Matrix2d;
+typedef Eigen::Vector2d Vector2d;
 
 using namespace std;
 
@@ -60,8 +62,8 @@ class OccupancyGrid
         vector<int> global_to_local(double lat, double lon);
         vector<double> local_to_global(int x, int y);
 
-        MatrixXd clean_lidar(sensor_msgs::msg::PointCloud2::SharedPtr msg);
-        Grid process_local_grid(MatrixXd xyz);
-        void orient_local_grid(Grid &local_grid, double heading, vector<int> local_origin);
+        MatrixXd clean_lidar(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
+        Grid process_local_grid(const MatrixXd &xyz);
+        Grid orient_local_grid(Grid &local_grid, double heading, vector<int> local_origin);
 
 };

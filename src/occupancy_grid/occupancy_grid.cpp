@@ -1,6 +1,5 @@
 #include "occupancy_grid/occupancy_grid.hpp"
 
-
 using namespace std;
 
 OccupancyGrid::OccupancyGrid(vector<double> origin, double cell_size) : origin(origin), cell_size(cell_size) {}
@@ -27,34 +26,33 @@ vector<double> OccupancyGrid::local_to_global(int x, int y) {
     return {lat, lon};
 }
 
-MatrixXd OccupancyGrid::clean_lidar(sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+MatrixXd OccupancyGrid::clean_lidar(const sensor_msgs::msg::PointCloud2::SharedPtr msg) {
     const size_t number_of_points = msg->height * msg->width;
-    MatrixXd xyz(number_of_points, 3);
+    MatrixXd xy(number_of_points, 2);
 
     sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(*msg, "y");
     sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
 
     for (size_t i = 0; i < number_of_points; ++i, ++iter_x, ++iter_y, ++iter_z) {
-        if (    iter_z[i] > 0 || iter_z[i] < -1.5 || 
-                iter_y[i] > 15 || iter_y[i] < -15 || 
-                iter_x[i] > 30) 
+        if (    iter_z[i] < 0 && iter_z[i] > -1.5 && 
+                iter_y[i] < 15 && iter_y[i] > -15 && 
+                iter_x[i] < 30) 
         {   
-            xyz(i, 0) = *iter_x;
-            xyz(i, 1) = *iter_y;
-            xyz(i, 2) = *iter_z;
+            xy(i, 0) = *iter_x;
+            xy(i, 1) = *iter_y;
         }
     }
-    return xyz;
+    return xy;
 }
 
-Grid OccupancyGrid::process_local_grid(MatrixXd xyz) {
+Grid OccupancyGrid::process_local_grid(const MatrixXd &xy) {
     Grid local_grid;
     
     // Increment the value of the cell by 5 for each point
-    for (int i = 0; i < xyz.rows(); i++) {
-        int x = floor((-1 * xyz(i,1)) / cell_size);
-        int y = floor((xyz(i,0)+lidar_offset) / cell_size);
+    for (int i = 0; i < xy.rows(); i++) {
+        int x = floor((-1 * xy(i,1)) / cell_size);
+        int y = floor((xy(i,0)+lidar_offset) / cell_size);
         local_grid.increment_value(x, y, 5);
     }
 
@@ -69,4 +67,38 @@ Grid OccupancyGrid::process_local_grid(MatrixXd xyz) {
         }
     }
     return local_grid;
+}
+
+Grid OccupancyGrid::orient_local_grid(Grid &local_grid, double heading, vector<int> local_origin) {
+    /*
+    Orients the local grid to match the robot's heading and position.
+    The robot's heading is 0 when it is facing North.
+    The local grid is oriented with x as right and y as forward.
+    */
+   double theta = heading * (PI / 180);
+   // Define the rotation matrix (2D)
+    Matrix2d R;
+    R << cos(theta), -sin(theta),
+         sin(theta), cos(theta);
+
+    // Create a new grid to store the rotated values
+    Grid oriented_grid;
+    for (const auto &e : local_grid) {
+        pair<int, int> xy = e.first;
+        uint8_t value = e.second;
+        // Rotate the x,y coordinates
+        Vector2d rotated_xy = R * Vector2d(xy.first, xy.second);
+        int x = rotated_xy(0) + local_origin[0];
+        int y = rotated_xy(1) + local_origin[1];
+        oriented_grid(x, y, value);
+    }
+    return oriented_grid;
+}
+
+void OccupancyGrid::update_grid(double lat, double lon, double heading, sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    vector<int> local_origin = global_to_local(lat, lon);
+    MatrixXd xy = clean_lidar(msg);
+    Grid local_grid = process_local_grid(xy);
+    Grid oriented_grid = orient_local_grid(local_grid, heading, local_origin);
+    grid.add_grid(oriented_grid);
 }
