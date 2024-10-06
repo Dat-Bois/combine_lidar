@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef COMBINE_LIVOX_HPP
 #define COMBINE_LIVOX_HPP
 
