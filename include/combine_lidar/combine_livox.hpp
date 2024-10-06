@@ -3,11 +3,13 @@
 #ifndef COMBINE_LIVOX_HPP
 #define COMBINE_LIVOX_HPP
 
+#include <mutex>
+#include <memory>
 #include <rclcpp/rclcpp.hpp>
 #include <std_msgs/msg/string.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <memory>
-#include <mutex>
+
+#include "occupancy_grid/occupancy_grid.hpp"
 
 typedef sensor_msgs::msg::PointCloud2 PointCloud2;
 typedef std::shared_ptr<PointCloud2> PointCloud2Ptr;
@@ -18,18 +20,23 @@ public:
     CombineLivox();
 
 private:
+
+    OccupancyGrid OC{0.2};
+
     void timer_callback();
     rclcpp::TimerBase::SharedPtr timer_;
     rclcpp::CallbackGroup::SharedPtr left_group;
     rclcpp::CallbackGroup::SharedPtr right_group;
+    rclcpp::CallbackGroup::SharedPtr gps_group;
     rclcpp::Subscription<PointCloud2>::SharedPtr left_cloud_sub_;
     rclcpp::Subscription<PointCloud2>::SharedPtr right_cloud_sub_;
+    rclcpp::Subscription<interfaces::msg::LatLonHead>::SharedPtr gps_sub_;
     rclcpp::Publisher<PointCloud2>::SharedPtr combined_cloud_pub_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr comb_lidar_status_pub_;
 };
 
 void SigHandle(int sig);
-PointCloud2Ptr combine_lidar();
+PointCloud2Ptr combine_lidar_data();
 void right_PointCloud2Callback(const PointCloud2Ptr msg);
 void left_PointCloud2Callback(const PointCloud2Ptr msg);
 

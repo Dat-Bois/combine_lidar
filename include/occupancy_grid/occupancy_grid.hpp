@@ -1,12 +1,16 @@
 #pragma once
 
 #include <cmath>
+#include <mutex>
 #include <vector>
 #include <iostream>
 #include <eigen3/Eigen/Dense>
 #include <occupancy_grid/grid.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
+
+#include "interfaces/msg/lat_lon_head.hpp"
+
 
 /*
 This is a C++ implementation of the occupancy grid I wrote in python.
@@ -41,9 +45,11 @@ using namespace std;
 class OccupancyGrid
 {
     public:
+        OccupancyGrid(double cell_size);
         OccupancyGrid(vector<double> origin, double cell_size);
 
-        void update_grid(double lat, double lon, double heading, sensor_msgs::msg::PointCloud2::SharedPtr msg);
+        void update_gps(const interfaces::msg::LatLonHead::SharedPtr msg);
+        void update_grid(sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
         Grid get_grid();
 
@@ -51,7 +57,9 @@ class OccupancyGrid
 
         Grid grid;
 
-        vector<double> origin;
+        vector<double> origin = {0, 0};
+        vector<double> position = {0, 0, 0};
+
         double cell_size;
         double lidar_offset = 0.5; // meters
 
@@ -59,11 +67,16 @@ class OccupancyGrid
         double cos_deg(double deg);
         const double PI = 3.14159265358979323846;
 
+        std::mutex gps_mutex;
+        void set_origin(vector<double> origin);
+
         vector<int> global_to_local(double lat, double lon);
         vector<double> local_to_global(int x, int y);
 
         MatrixXd clean_lidar(const sensor_msgs::msg::PointCloud2::SharedPtr msg);
         Grid process_local_grid(const MatrixXd &xyz);
         Grid orient_local_grid(Grid &local_grid, double heading, vector<int> local_origin);
+
+        void update_grid(double lat, double lon, double heading, sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
 };

@@ -31,6 +31,9 @@ find_package(std_msgs REQUIRED)
 # external from ROS
 find_package(Eigen3 REQUIRED)
 
+# custom interfaces
+find_package(interfaces REQUIRED)
+
 include_directories(
         include
         ${EIGEN3_INCLUDE_DIR}
@@ -41,7 +44,7 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 # Add executable the generate | name must be the same as the launch file
 add_executable(combine_lidar_node ${SOURCES})
 # Link dependencies to the executable | name must be the same as the launch file
-ament_target_dependencies(combine_lidar_node rclcpp std_msgs sensor_msgs)
+ament_target_dependencies(combine_lidar_node rclcpp std_msgs sensor_msgs interfaces)
 
 # install the executable
 install(TARGETS

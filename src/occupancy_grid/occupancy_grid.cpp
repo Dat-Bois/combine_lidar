@@ -2,6 +2,7 @@
 
 using namespace std;
 
+OccupancyGrid::OccupancyGrid(double cell_size) : cell_size(cell_size) {}
 OccupancyGrid::OccupancyGrid(vector<double> origin, double cell_size) : origin(origin), cell_size(cell_size) {}
 
 double OccupancyGrid::sin_deg(double d) {
@@ -12,6 +13,10 @@ double OccupancyGrid::sin_deg(double d) {
 double OccupancyGrid::cos_deg(double d) {
 	if (fmod(d, 90) == 0 && ((int)d/90)%2==1) { return 0; }
 	return cos((d * PI) / 180);
+}
+
+void OccupancyGrid::set_origin(vector<double> origin) {
+    this->origin = origin;
 }
 
 vector<int> OccupancyGrid::global_to_local(double lat, double lon) {
@@ -95,10 +100,27 @@ Grid OccupancyGrid::orient_local_grid(Grid &local_grid, double heading, vector<i
     return oriented_grid;
 }
 
+void OccupancyGrid::update_gps(const interfaces::msg::LatLonHead::SharedPtr msg) {
+    std::lock_guard<std::mutex> lock(gps_mutex);
+    if(origin[0] == 0 && origin[1] == 0) {
+        set_origin({msg->latitude, msg->longitude});
+    }
+    position = {msg->latitude, msg->longitude, msg->heading};
+}
+
 void OccupancyGrid::update_grid(double lat, double lon, double heading, sensor_msgs::msg::PointCloud2::SharedPtr msg) {
     vector<int> local_origin = global_to_local(lat, lon);
     MatrixXd xy = clean_lidar(msg);
     Grid local_grid = process_local_grid(xy);
     Grid oriented_grid = orient_local_grid(local_grid, heading, local_origin);
     grid.add_grid(oriented_grid);
+}
+
+void OccupancyGrid::update_grid(sensor_msgs::msg::PointCloud2::SharedPtr msg) {
+    vector<double> pos;
+    {
+        std::lock_guard<std::mutex> lock(gps_mutex);
+        pos = position;
+    }
+    update_grid(pos[0], pos[1], pos[2], msg);
 }

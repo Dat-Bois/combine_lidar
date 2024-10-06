@@ -27,6 +27,8 @@ std::string left_cloud_topic = "/livox/lidar_3WEDH7600103311";
 std::string right_cloud_topic = "/livox/lidar_3WEDH7600104801"; // /livox/lidar_3WEDH7600104801
 std::string combined_cloud_topic = "/livox/combined_lidar";
 
+std::string gps_topic = "/RX/gps";
+
 double x_distance_to_center = 0.2; // meters
 double y_distance_to_center = 0; // meters 
 double angle_c = 30; // degrees, clockwise rotation
@@ -44,7 +46,7 @@ void SigHandle(int sig)
   rclcpp::shutdown();
 }
 
-PointCloud2Ptr combine_lidar() {
+PointCloud2Ptr combine_lidar_data() {
   std::lock_guard<std::mutex> left_lock(left_cloud_mutex, std::adopt_lock);
   std::lock_guard<std::mutex> right_lock(right_cloud_mutex, std::adopt_lock);
 
@@ -89,26 +91,33 @@ CombineLivox::CombineLivox()
 {
   left_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
   right_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
+  gps_group = this->create_callback_group(rclcpp::CallbackGroupType::MutuallyExclusive);
 
   auto leftopts = rclcpp::SubscriptionOptions();
   leftopts.callback_group = left_group;
   auto rightopts = rclcpp::SubscriptionOptions();
   rightopts.callback_group = right_group;
+  auto gpsopts = rclcpp::SubscriptionOptions();
+  gpsopts.callback_group = gps_group;
 
   left_cloud_sub_ = this->create_subscription<PointCloud2>(left_cloud_topic, 10, left_PointCloud2Callback, leftopts);
   right_cloud_sub_ = this->create_subscription<PointCloud2>(right_cloud_topic, 10, right_PointCloud2Callback, rightopts);
   combined_cloud_pub_ = this->create_publisher<PointCloud2>(combined_cloud_topic, 10);
   comb_lidar_status_pub_ = this->create_publisher<std_msgs::msg::String>("comb_lidar_status", 10);
 
+  gps_sub_ = this->create_subscription<interfaces::msg::LatLonHead>(gps_topic, 10, 
+    [this](const interfaces::msg::LatLonHead::SharedPtr msg) {OC.update_gps(msg);}, gpsopts);
+
   timer_ = this->create_wall_timer(30ms, std::bind(&CombineLivox::timer_callback, this));
 }
 
 void CombineLivox::timer_callback() {
   std_msgs::msg::String msg;
-  PointCloud2Ptr combined_cloud = combine_lidar();
+  PointCloud2Ptr combined_cloud = combine_lidar_data();
   if (combined_cloud != nullptr) {
     this->combined_cloud_pub_->publish(*combined_cloud);
     msg.data = "Combined cloud published";
+    this->OC.update_grid(combined_cloud);
   } else {
     msg.data = "Combined cloud not published";
   }
