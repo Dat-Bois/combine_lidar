@@ -5,10 +5,6 @@ using namespace std;
 
 Grid::Grid(uint8_t default_value) : default_value(default_value) {}
 
-int Grid::get_size() {
-    return grid.size();
-}
-
 void Grid::adjust_ranges(int x, int y) {
     x_range[0] = min(x_range[0], x);
     x_range[1] = max(x_range[1], x);

@@ -22,7 +22,9 @@ class Grid
 
         void increment_value(int x, int y, int value);
 
-        int get_size();
+        int get_size() {return grid.size();}
+        vector<int> get_x_range() {return x_range;}
+        vector<int> get_y_range() {return y_range;}
 
         void add_grid(Grid grid);
         

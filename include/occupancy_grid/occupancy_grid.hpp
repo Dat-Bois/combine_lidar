@@ -3,6 +3,7 @@
 #include <cmath>
 #include <vector>
 #include <iostream>
+#include <eigen3/Eigen/Dense>
 #include <occupancy_grid/grid.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <sensor_msgs/point_cloud2_iterator.hpp>
@@ -31,6 +32,8 @@ When the robot moves, the local grid is overlayed onto the global grid at the ro
 
 */
 
+typedef Eigen::MatrixXd MatrixXd;
+
 using namespace std;
 
 class OccupancyGrid
@@ -50,11 +53,15 @@ class OccupancyGrid
         double cell_size;
         double lidar_offset = 0.5; // meters
 
+        double sin_deg(double deg);
+        double cos_deg(double deg);
+        const double PI = 3.14159265358979323846;
+
         vector<int> global_to_local(double lat, double lon);
         vector<double> local_to_global(int x, int y);
 
-        void clean_lidar(sensor_msgs::msg::PointCloud2::SharedPtr msg);
-        void process_local_grid(sensor_msgs::msg::PointCloud2::SharedPtr msg);
+        MatrixXd clean_lidar(sensor_msgs::msg::PointCloud2::SharedPtr msg);
+        Grid process_local_grid(MatrixXd xyz);
         void orient_local_grid(Grid &local_grid, double heading, vector<int> local_origin);
 
 };
