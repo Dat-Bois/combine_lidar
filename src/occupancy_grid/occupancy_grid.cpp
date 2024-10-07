@@ -113,6 +113,7 @@ void OccupancyGrid::update_grid(double lat, double lon, double heading, sensor_m
     MatrixXd xy = clean_lidar(msg);
     Grid local_grid = process_local_grid(xy);
     Grid oriented_grid = orient_local_grid(local_grid, heading, local_origin);
+    std::lock_guard<std::mutex> lock(grid_mutex);
     grid.add_grid(oriented_grid);
 }
 
@@ -122,5 +123,12 @@ void OccupancyGrid::update_grid(sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(gps_mutex);
         pos = position;
     }
-    update_grid(pos[0], pos[1], pos[2], msg);
+    if(pos[0]!=0 && pos[1]!=0 && pos[2]!=0) {
+        update_grid(pos[0], pos[1], pos[2], msg);
+    }
+}
+
+Grid OccupancyGrid::get_grid() {
+    std::lock_guard<std::mutex> lock(grid_mutex);
+    return Grid(grid);
 }

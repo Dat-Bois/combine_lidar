@@ -77,6 +77,7 @@ class OccupancyGrid
         Grid process_local_grid(const MatrixXd &xyz);
         Grid orient_local_grid(Grid &local_grid, double heading, vector<int> local_origin);
 
+        std::mutex grid_mutex;
         void update_grid(double lat, double lon, double heading, sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
 };

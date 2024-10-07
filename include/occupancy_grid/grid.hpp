@@ -17,6 +17,19 @@ class Grid
     public:
         Grid(uint8_t default_value = 20);
 
+        // Copy constructor
+        Grid(const Grid &other_grid) :  max_value(other_grid.max_value), zero_point(other_grid.zero_point), 
+                                        min_value(other_grid.min_value), default_value(other_grid.default_value),
+                                        x_range(other_grid.x_range), y_range(other_grid.y_range)
+        {
+            for (const auto &e : other_grid.grid) {
+                pair<int, int> xy = e.first;
+                uint8_t value = e.second;
+                grid[{xy.first, xy.second}] = value;
+            }
+
+        }
+
         uint8_t operator()(int x, int y) const {return get_value(x, y);}
         void operator()(int x, int y, uint8_t value) {set_value(x, y, value);}
 
