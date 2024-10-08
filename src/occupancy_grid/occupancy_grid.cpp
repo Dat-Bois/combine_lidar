@@ -3,7 +3,7 @@
 using namespace std;
 
 OccupancyGrid::OccupancyGrid(double cell_size) : cell_size(cell_size) {}
-OccupancyGrid::OccupancyGrid(vector<double> origin, double cell_size) : origin(origin), cell_size(cell_size) {}
+OccupancyGrid::OccupancyGrid(vector<double> origin, double cell_size) : origin(std::move(origin)), cell_size(cell_size) {}
 
 double OccupancyGrid::sin_deg(double d) {
 	if (fmod(d, 180) == 0) { return 0; }
@@ -20,6 +20,10 @@ void OccupancyGrid::set_origin(vector<double> origin) {
 }
 
 vector<int> OccupancyGrid::global_to_local(double lat, double lon) {
+    if(lat > 90 || lat < -90 || lon > 180 || lon < -180) {
+        cout << lat << " " << lon << endl;
+        throw std::invalid_argument("Invalid latitude or longitude");
+    }
     double x = (lat-origin[0]) * 111139;
     double y = (lon-origin[1]) * 111139 * cos_deg(lat);
     return {(int)(x/cell_size), (int)(y/cell_size)};
@@ -40,9 +44,9 @@ MatrixXd OccupancyGrid::clean_lidar(const sensor_msgs::msg::PointCloud2::SharedP
     sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
 
     for (size_t i = 0; i < number_of_points; ++i, ++iter_x, ++iter_y, ++iter_z) {
-        if (    iter_z[i] < 0 && iter_z[i] > -1.5 && 
-                iter_y[i] < 15 && iter_y[i] > -15 && 
-                iter_x[i] < 30) 
+        if (    *iter_z < 0 && *iter_z > -1.5 && 
+                *iter_y < 15 && *iter_y > -15 && 
+                *iter_x < 30) 
         {   
             xy(i, 0) = *iter_x;
             xy(i, 1) = *iter_y;
