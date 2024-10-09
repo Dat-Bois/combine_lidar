@@ -25,9 +25,11 @@ std::mutex right_cloud_mutex;
 
 std::string left_cloud_topic = "/livox/lidar_3WEDH7600103311";
 std::string right_cloud_topic = "/livox/lidar_3WEDH7600104801"; // /livox/lidar_3WEDH7600104801
-std::string combined_cloud_topic = "/livox/combined_lidar";
+std::string combined_cloud_topic = "/RX/livox/combined_lidar";
 
 std::string gps_topic = "/RX/gps";
+std::string occupancy_grid_topic = "/RX/occupancy_grid";
+std::string status_topic = "/RX/status";
 
 double x_distance_to_center = 0.2; // meters
 double y_distance_to_center = 0; // meters 
@@ -103,12 +105,20 @@ CombineLivox::CombineLivox()
   left_cloud_sub_ = this->create_subscription<PointCloud2>(left_cloud_topic, 10, left_PointCloud2Callback, leftopts);
   right_cloud_sub_ = this->create_subscription<PointCloud2>(right_cloud_topic, 10, right_PointCloud2Callback, rightopts);
   combined_cloud_pub_ = this->create_publisher<PointCloud2>(combined_cloud_topic, 10);
-  comb_lidar_status_pub_ = this->create_publisher<std_msgs::msg::String>("comb_lidar_status", 10);
+  occupancy_grid_pub_ = this->create_publisher<interfaces::msg::Occupancy>(occupancy_grid_topic, 10);
+  comb_lidar_status_pub_ = this->create_publisher<std_msgs::msg::String>(status_topic, 10);
 
   gps_sub_ = this->create_subscription<interfaces::msg::LatLonHead>(gps_topic, 10, 
     [this](const interfaces::msg::LatLonHead::SharedPtr msg) {OC.update_gps(msg);}, gpsopts);
 
   timer_ = this->create_wall_timer(30ms, std::bind(&CombineLivox::timer_callback, this));
+}
+
+interfaces::msg::Occupancy::SharedPtr CombineLivox::occupancy_grid(PointCloud2Ptr combined_cloud) {
+  OC.update_grid(combined_cloud);
+  interfaces::msg::Occupancy msg = OC.get_msg();
+  msg.header.stamp = rclcpp::Clock().now();
+  return std::make_shared<interfaces::msg::Occupancy>(msg);
 }
 
 void CombineLivox::timer_callback() {
@@ -117,7 +127,12 @@ void CombineLivox::timer_callback() {
   if (combined_cloud != nullptr) {
     this->combined_cloud_pub_->publish(*combined_cloud);
     msg.data = "Combined cloud published";
-    this->OC.update_grid(combined_cloud);
+    try {
+      this->occupancy_grid_pub_->publish(*this->occupancy_grid(combined_cloud));
+    }
+    catch (const std::exception &e) {
+      msg.data = e.what();
+    }
   } else {
     msg.data = "Combined cloud not published";
   }

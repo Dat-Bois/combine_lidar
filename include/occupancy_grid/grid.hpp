@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include "interfaces/msg/cell.hpp"
+#include "interfaces/msg/grid.hpp"
 #include <parallel_hashmap/phmap.h>
 
 
@@ -30,16 +32,21 @@ class Grid
 
         }
 
+        // Delete grid
+        ~Grid() {grid.clear();}
+
         uint8_t operator()(int x, int y) const {return get_value(x, y);}
         void operator()(int x, int y, uint8_t value) {set_value(x, y, value);}
 
         void increment_value(int x, int y, int value);
 
-        int get_size() {return grid.size();}
+        void add_grid(Grid grid);
+
         vector<int> get_x_range() {return x_range;}
         vector<int> get_y_range() {return y_range;}
+        int get_size() {return grid.size();}
 
-        void add_grid(Grid grid);
+        interfaces::msg::Grid get_msg();
         
         class Iterator {
             public:

@@ -136,3 +136,13 @@ Grid OccupancyGrid::get_grid() {
     std::lock_guard<std::mutex> lock(grid_mutex);
     return Grid(grid);
 }
+
+interfaces::msg::Occupancy OccupancyGrid::get_msg() {
+    interfaces::msg::Occupancy msg;
+    msg.origin_latitude = origin[0];
+    msg.origin_longitude = origin[1];
+    msg.cell_size = cell_size;
+    msg.grid = grid.get_msg();
+    return msg;
+}
+

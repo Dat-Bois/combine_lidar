@@ -39,3 +39,18 @@ void Grid::add_grid(Grid grid) {
         increment_value(xy.first, xy.second, value);
     }
 }
+
+interfaces::msg::Grid Grid::get_msg() {
+    interfaces::msg::Grid msg;
+    msg.x_min = x_range[0];
+    msg.x_max = x_range[1];
+    msg.y_min = y_range[0];
+    msg.y_max = y_range[1];
+    for (const auto &e : grid) {
+        interfaces::msg::Cell cell;
+        cell.x_coord = e.first.first;
+        cell.y_coord = e.first.second;
+        cell.value = e.second;
+    }
+    return msg;
+}

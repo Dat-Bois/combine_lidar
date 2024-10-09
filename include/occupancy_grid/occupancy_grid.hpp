@@ -10,6 +10,7 @@
 #include <sensor_msgs/point_cloud2_iterator.hpp>
 
 #include "interfaces/msg/lat_lon_head.hpp"
+#include "interfaces/msg/occupancy.hpp"
 
 
 /*
@@ -52,6 +53,7 @@ class OccupancyGrid
         void update_grid(sensor_msgs::msg::PointCloud2::SharedPtr msg);
 
         Grid get_grid();
+        interfaces::msg::Occupancy get_msg();
 
     private:
 

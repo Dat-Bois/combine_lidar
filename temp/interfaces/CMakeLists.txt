@@ -13,6 +13,8 @@ find_package(rosidl_default_generators REQUIRED)
 # generate interfaces
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/LatLonHead.msg"
+  "msg/Cell.msg"
+  "msg/Grid.msg"
   "msg/Occupancy.msg"
   DEPENDENCIES std_msgs
 )

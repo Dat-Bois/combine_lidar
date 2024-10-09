@@ -18,6 +18,7 @@ class CombineLivox : public rclcpp::Node
 {
 public:
     CombineLivox();
+    interfaces::msg::Occupancy::SharedPtr occupancy_grid(PointCloud2Ptr combined_cloud);
 
 private:
 
@@ -32,6 +33,7 @@ private:
     rclcpp::Subscription<PointCloud2>::SharedPtr right_cloud_sub_;
     rclcpp::Subscription<interfaces::msg::LatLonHead>::SharedPtr gps_sub_;
     rclcpp::Publisher<PointCloud2>::SharedPtr combined_cloud_pub_;
+    rclcpp::Publisher<interfaces::msg::Occupancy>::SharedPtr occupancy_grid_pub_;
     rclcpp::Publisher<std_msgs::msg::String>::SharedPtr comb_lidar_status_pub_;
 };
 
