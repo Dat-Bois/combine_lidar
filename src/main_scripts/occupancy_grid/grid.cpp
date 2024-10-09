@@ -42,6 +42,7 @@ void Grid::add_grid(const Grid &other_grid) {
 
 interfaces::msg::Grid Grid::get_msg() {
     interfaces::msg::Grid msg;
+    msg.size = grid.size(); 
     msg.x_min = x_range[0];
     msg.x_max = x_range[1];
     msg.y_min = y_range[0];

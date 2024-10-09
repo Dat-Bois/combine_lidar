@@ -1,3 +1,4 @@
+int64 size
 int32 x_min
 int32 x_max
 int32 y_min
