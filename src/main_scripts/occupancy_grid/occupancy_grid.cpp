@@ -42,17 +42,19 @@ MatrixXd OccupancyGrid::clean_lidar(const sensor_msgs::msg::PointCloud2::SharedP
     sensor_msgs::PointCloud2Iterator<float> iter_x(*msg, "x");
     sensor_msgs::PointCloud2Iterator<float> iter_y(*msg, "y");
     sensor_msgs::PointCloud2Iterator<float> iter_z(*msg, "z");
-
+    size_t valid_idx = 0;
     for (size_t i = 0; i < number_of_points; ++i, ++iter_x, ++iter_y, ++iter_z) {
         if (    *iter_z < 0 && *iter_z > -1.5 && 
                 *iter_y < 15 && *iter_y > -15 && 
                 *iter_x < 30) 
         {   
-            xy(i, 0) = *iter_x;
-            xy(i, 1) = *iter_y;
+            xy(valid_idx, 0) = *iter_x;
+            xy(valid_idx, 1) = *iter_y;
+            valid_idx++;
         }
     }
-    return xy;
+    xy.conservativeResize(valid_idx, 2);
+    return xy; // ~15,000 points
 }
 
 Grid OccupancyGrid::process_local_grid(const MatrixXd &xy) {
@@ -63,7 +65,7 @@ Grid OccupancyGrid::process_local_grid(const MatrixXd &xy) {
         int x = floor((-1 * xy(i,1)) / cell_size);
         int y = floor((xy(i,0)+lidar_offset) / cell_size);
         local_grid.increment_value(x, y, 5);
-    }
+    } // < 1000 cells
 
     // For points within the range, but no points, decrement the value by 10
     vector<int> x_range = local_grid.get_x_range();
@@ -74,7 +76,7 @@ Grid OccupancyGrid::process_local_grid(const MatrixXd &xy) {
                 local_grid.increment_value(x, y, -10);
             }
         }
-    }
+    } 
     return local_grid;
 }
 

@@ -33,14 +33,14 @@ class Grid
         }
 
         // Delete grid
-        ~Grid() {grid.clear();}
+        // ~Grid() {grid.clear();}
 
         uint8_t operator()(int x, int y) const {return get_value(x, y);}
         void operator()(int x, int y, uint8_t value) {set_value(x, y, value);}
 
         void increment_value(int x, int y, int value);
 
-        void add_grid(Grid grid);
+        void add_grid(const Grid &other_grid);
 
         vector<int> get_x_range() {return x_range;}
         vector<int> get_y_range() {return y_range;}
@@ -85,7 +85,7 @@ class Grid
         vector<int> y_range = {0, 0}; // [min, max]
 
         void adjust_ranges(int x, int y);
-        void set_value(int x, int y, uint8_t value);
+        void set_value(int x, int y, int value);
         uint8_t get_value(int x, int y) const;
 
 };

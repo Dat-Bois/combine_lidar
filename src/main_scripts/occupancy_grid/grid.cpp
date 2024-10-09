@@ -1,4 +1,5 @@
 #include "occupancy_grid/grid.hpp"
+#include <iostream>
 
 using namespace std;
 
@@ -20,20 +21,19 @@ uint8_t Grid::get_value(int x, int y) const {
     return it->second;
 }
 
-void Grid::set_value(int x, int y, uint8_t value) {
+void Grid::set_value(int x, int y, int value) {
     adjust_ranges(x, y);
-    value = min(max_value, max(min_value, value));
-    grid[{x, y}] = value;
+    value = min((int) max_value, max((int) min_value, value));
+    grid[{x, y}] = (uint8_t) value;
 }
 
 void Grid::increment_value(int x, int y, int value) {
-    adjust_ranges(x, y);
     int new_value = get_value(x, y) + value;
     set_value(x, y, new_value);
 }
 
-void Grid::add_grid(Grid grid) {
-    for (const auto &e : grid) {
+void Grid::add_grid(const Grid &other_grid) {
+    for (const auto &e : other_grid.grid) {
         pair<int, int> xy = e.first;
         uint8_t value = e.second;
         increment_value(xy.first, xy.second, value);
@@ -51,6 +51,7 @@ interfaces::msg::Grid Grid::get_msg() {
         cell.x_coord = e.first.first;
         cell.y_coord = e.first.second;
         cell.value = e.second;
+        msg.cells.push_back(cell);
     }
     return msg;
 }
