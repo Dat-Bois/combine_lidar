@@ -39,16 +39,19 @@ include_directories(
         ${EIGEN3_INCLUDE_DIR}
 )
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB_RECURSE MAIN_SOURCES "src/main_scripts/*.cpp")
 
 # Add executable the generate | name must be the same as the launch file
-add_executable(combine_lidar_node ${SOURCES})
+add_executable(combine_lidar_node ${MAIN_SOURCES})
+add_executable(gps_sim_node src/test_scripts/sim_gps.cpp)
 # Link dependencies to the executable | name must be the same as the launch file
 ament_target_dependencies(combine_lidar_node rclcpp std_msgs sensor_msgs interfaces)
+ament_target_dependencies(gps_sim_node rclcpp std_msgs sensor_msgs interfaces)
 
 # install the executable
 install(TARGETS
 combine_lidar_node
+gps_sim_node
   DESTINATION lib/${PROJECT_NAME})
 # install the launch executable
 install(DIRECTORY
