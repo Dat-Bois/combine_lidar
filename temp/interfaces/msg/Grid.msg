@@ -1,6 +1,6 @@
 int64 size
-int32 x_min
-int32 x_max
-int32 y_min
-int32 y_max
+int32[] x_range
+int32[] y_range
+uint8[] value_range
+uint8 value_zero_point
 Cell[] cells

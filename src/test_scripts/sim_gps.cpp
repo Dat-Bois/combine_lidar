@@ -31,7 +31,7 @@ class SimGPS : public rclcpp::Node
             interfaces::msg::LatLonHead msg;
             msg.latitude = 33.64094057570441;
             msg.longitude = -117.82929527244504;
-            msg.heading = 10;
+            msg.heading = 0;
             msg.header.stamp = rclcpp::Clock().now();
             gps_pub_->publish(msg);
         }

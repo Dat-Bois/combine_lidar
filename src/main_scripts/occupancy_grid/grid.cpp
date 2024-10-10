@@ -43,10 +43,10 @@ void Grid::add_grid(const Grid &other_grid) {
 interfaces::msg::Grid Grid::get_msg() {
     interfaces::msg::Grid msg;
     msg.size = grid.size(); 
-    msg.x_min = x_range[0];
-    msg.x_max = x_range[1];
-    msg.y_min = y_range[0];
-    msg.y_max = y_range[1];
+    msg.x_range = {x_range[0], x_range[1]};
+    msg.y_range = {y_range[0], y_range[1]};
+    msg.value_range = {min_value, max_value};
+    msg.value_zero_point = zero_point;
     for (const auto &e : grid) {
         interfaces::msg::Cell cell;
         cell.x_coord = e.first.first;

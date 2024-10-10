@@ -129,7 +129,7 @@ void OccupancyGrid::update_grid(sensor_msgs::msg::PointCloud2::SharedPtr msg) {
         std::lock_guard<std::mutex> lock(gps_mutex);
         pos = position;
     }
-    if(pos[0]!=0 && pos[1]!=0 && pos[2]!=0) {
+    if(pos[0]!=0 && pos[1]!=0) {
         update_grid(pos[0], pos[1], pos[2], msg);
     }
 }
