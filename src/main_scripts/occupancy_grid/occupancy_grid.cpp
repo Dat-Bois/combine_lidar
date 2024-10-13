@@ -72,7 +72,7 @@ Grid OccupancyGrid::process_local_grid(const MatrixXd &xy) {
     vector<int> y_range = local_grid.get_y_range();
     for (int x = x_range[0]; x <= x_range[1]; x++) {
         for (int y = y_range[0]; y <= y_range[1]; y++) {
-            if (local_grid(x, y) == 20) {
+            if (local_grid.is_zero(x, y)) {
                 local_grid.increment_value(x, y, -10);
             }
         }

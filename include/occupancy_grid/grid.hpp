@@ -44,6 +44,7 @@ class Grid
 
         vector<int> get_x_range() {return x_range;}
         vector<int> get_y_range() {return y_range;}
+        bool is_zero(int x, int y) {return get_value(x, y) == zero_point;}
         int get_size() {return grid.size();}
 
         interfaces::msg::Grid get_msg();

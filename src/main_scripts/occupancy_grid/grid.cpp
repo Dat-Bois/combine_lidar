@@ -35,7 +35,7 @@ void Grid::increment_value(int x, int y, int value) {
 void Grid::add_grid(const Grid &other_grid) {
     for (const auto &e : other_grid.grid) {
         pair<int, int> xy = e.first;
-        uint8_t value = e.second;
+        int16_t value = e.second - zero_point;
         increment_value(xy.first, xy.second, value);
     }
 }
